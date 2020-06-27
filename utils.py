@@ -2,8 +2,9 @@ from collections import defaultdict
 
 
 class incrementing_dict(defaultdict):
-    def __init__(self, *args, start_count=1, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, start_count=1, **kwargs):
+        assert 'default_factory' not in kwargs, 'Cannot use default_factory'
+        super().__init__(**kwargs)
         self._count = start_count
 
     def __missing__(self, key):
