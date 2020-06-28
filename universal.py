@@ -35,11 +35,12 @@ class RenderableObject(Renderable):
         self.dependencies = dependencies or []
         self.name = name or self.name
 
-    def pre_render(self, engine, **kwargs):
+    def pre_render(self, engine, ignore_dependencies=False, **kwargs):
         super().pre_render(engine, **kwargs)
-        for dep in self.dependencies:
-            if not engine.is_rendered(dep):
-                dep.render(engine, **kwargs)
+        if not ignore_dependencies:
+            for dep in self.dependencies:
+                if not engine.is_rendered(dep):
+                    dep.render(engine, **kwargs)
 
 
 class Variable(RenderableObject):
@@ -66,6 +67,9 @@ class Variable(RenderableObject):
     def __str__(self):
         return f'{self.array and str(self.array) or ""}_{super().__str__()}'
 
+    def is_free(self):
+        return self.array is None or self.array.is_free()
+
 
 class Array(RenderableObject):
     name = 'array'
@@ -74,6 +78,8 @@ class Array(RenderableObject):
     def __init__(self, size, origin=None, **kwargs):
         super().__init__(**kwargs)
         self.size = size
+        if origin is not None:
+            assert isinstance(origin, RenderableMapping), 'Origin must be either a mapping or None'
         self.origin = origin
         self.variables = [self.variable_cls(array=self, dependencies=[self]) for _ in range(self.size)]
 
@@ -90,6 +96,9 @@ class Array(RenderableObject):
 
     def __str__(self):
         return f'[{self.origin and str(self.origin) or ""}]_{super().__str__()}'
+
+    def is_free(self):
+        return self.origin is None and not self.dependencies
 
 
 class RenderableMapping(Renderable):
@@ -112,7 +121,7 @@ class Function(RenderableMapping):
     name = 'function'
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs, output_degree=1)
+        super().__init__(*args, **kwargs)
         self.values = defaultdict(dict)
 
     def set_value(self, input_values, output_index, output_value):
@@ -121,7 +130,7 @@ class Function(RenderableMapping):
         assert all([value in self.POSSIBLE_VALUES for value in input_values]), f'All input values must be one of {self.POSSIBLE_VALUES}'
         assert output_value in self.POSSIBLE_VALUES, f'Output value is {output_value}, must be one of {self.POSSIBLE_VALUES}'
         assert output_index not in self.values[input_values], f'Output index {output_index} is already set for values {input_values}'
-        self.values[input_values][output_index] = output_value
+        self.values[output_index][tuple(input_values)] = output_value
 
     def do_render(self, engine, **kwargs):
         engine.render_function(self, **kwargs)
@@ -139,22 +148,47 @@ class Engine:
         raise NotImplementedError
 
     def render_variable(self, variable: Variable, **kwargs):
-        if variable.array is None:
-            self.render_basic_variable(variable, **kwargs)
+        if variable.is_free():
+            self.render_free_variable(variable, **kwargs)
         else:
-            self.render_complex_variable(variable, **kwargs)
+            self.render_bound_variable(variable, **kwargs)
 
-    def render_basic_variable(self, variable: Variable, **kwargs):
+    def render_free_variable(self, variable: Variable, **kwargs):
         raise NotImplementedError
 
-    def render_complex_variable(self, variable: Variable, **kwargs):
+    def render_bound_variable(self, variable: Variable, **kwargs):
         raise NotImplementedError
 
     def render_array(self, array: Array, **kwargs):
+        if array.is_free():
+            self.render_free_array(array, **kwargs)
+        else:
+            self.render_bound_array(array, **kwargs)
+
+    def render_free_array(self, array: Array, **kwargs):
+        for var in array.variables:
+            var.render(self, ignore_dependencies=True)
+        self.mark_rendered(array)
+
+    def render_bound_array(self, array: Array, **kwargs):
+        if isinstance(array.origin, Function):
+            self.render_function_output(array, **kwargs)
+        elif isinstance(array.origin, ChoiceMapping):
+            self.render_choice_output(array, **kwargs)
+        else:
+            raise TypeError(f'Unknown origin type {type(array.origin)}')
+
+    def render_function_output(self, array: Array, **kwargs):
+        raise NotImplementedError
+
+    def render_choice_output(self, array: Array, **kwargs):
         raise NotImplementedError
 
     def render_function(self, function: Function, **kwargs):
         raise NotImplementedError
 
     def render_choice_mapping(self, choice_map: ChoiceMapping, **kwargs):
+        raise NotImplementedError
+
+    def mark_rendered(self, elem: Renderable):
         raise NotImplementedError

@@ -1,0 +1,19 @@
+from itertools import combinations
+
+
+def exactly_one(symb_ids):
+    result = [symb_ids]
+    for u, v in combinations(symb_ids, 2):
+        result.append([-u, -v])
+    return result
+
+
+def set_value(symb, val: bool):
+    if val:
+        return [symb]
+    return [-symb]
+
+
+def if_then(all_true, then):
+    negated = [-symbol for symbol in all_true]
+    return [negated + clause for clause in then]
