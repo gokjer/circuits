@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from universal import Engine
+from universal import Engine, Array, Variable, Function, ChoiceMapping
 from utils import incrementing_dict
 
 
@@ -12,6 +12,7 @@ class SATEngine(Engine):
         self.functions = defaultdict(list)
         self.choices = defaultdict(list)
         self.rendered = set()
+        self.frameset = {}
 
     def is_rendered(self, elem):
         return str(elem) in self.rendered
@@ -25,8 +26,11 @@ class SATEngine(Engine):
     def render_complex_variable(self, variable, **kwargs):
         pass
 
-    def render_function(self, function, **kwargs):
+    def render_array(self, array: Array, **kwargs):
         pass
 
-    def render_choice_mapping(self, choice, **kwargs):
+    def render_function(self, function: Function, **kwargs):
+        pass
+
+    def render_choice_mapping(self, choice: ChoiceMapping, **kwargs):
         pass

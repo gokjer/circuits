@@ -1,15 +1,6 @@
 from collections import defaultdict
-from itertools import count
 
-
-class InstanceCounterMeta(type):
-    """
-    Metaclass to make instance counter not share count with descendants
-    (c) https://stackoverflow.com/questions/8628123/counting-instances-of-a-class
-    """
-    def __init__(cls, name, bases, attrs):
-        super().__init__(name, bases, attrs)
-        cls.counter = count(0)
+from utils import InstanceCounterMeta
 
 
 class Renderable(metaclass=InstanceCounterMeta):
@@ -78,12 +69,13 @@ class Variable(RenderableObject):
 
 class Array(RenderableObject):
     name = 'array'
+    variable_cls = Variable
 
     def __init__(self, size, origin=None, **kwargs):
         super().__init__(**kwargs)
         self.size = size
         self.origin = origin
-        self.variables = [Variable(array=self, dependencies=[self]) for _ in range(self.size)]
+        self.variables = [self.variable_cls(array=self, dependencies=[self]) for _ in range(self.size)]
 
     def __getitem__(self, item):
         return self.variables[item]
@@ -102,7 +94,7 @@ class Array(RenderableObject):
 
 class RenderableMapping(Renderable):
     name = 'mapping'
-    variable_cls = Variable
+    array_cls = Array
 
     def __init__(self, input_degree, output_degree):
         super().__init__()
@@ -111,7 +103,7 @@ class RenderableMapping(Renderable):
 
     def __call__(self, input_vars, **kwargs):
         assert len(input_vars) == self.input_degree, f'Wrong input size: {len(input_vars)} instead of {self.input_degree}'
-        outputs = Array(size=self.output_degree, dependencies=input_vars, origin=self)
+        outputs = self.array_cls(size=self.output_degree, dependencies=input_vars, origin=self)
         return outputs
 
 
@@ -147,7 +139,7 @@ class Engine:
         raise NotImplementedError
 
     def render_variable(self, variable: Variable, **kwargs):
-        if variable.origin is None:
+        if variable.array is None:
             self.render_basic_variable(variable, **kwargs)
         else:
             self.render_complex_variable(variable, **kwargs)

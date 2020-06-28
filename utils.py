@@ -1,4 +1,5 @@
 from collections import defaultdict
+from itertools import count
 
 
 class incrementing_dict(defaultdict):
@@ -14,3 +15,13 @@ class incrementing_dict(defaultdict):
 
     def __setitem__(self, key, value):
         raise RuntimeError('Direct insertion is forbidden for incrementing dict')
+
+
+class InstanceCounterMeta(type):
+    """
+    Metaclass to make instance counter not share count with descendants
+    (c) https://stackoverflow.com/questions/8628123/counting-instances-of-a-class
+    """
+    def __init__(cls, name, bases, attrs):
+        super().__init__(name, bases, attrs)
+        cls.counter = count(0)
