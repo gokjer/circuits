@@ -139,13 +139,23 @@ class Function(RenderableMapping):
 class ChoiceMapping(RenderableMapping):
     name = 'choice_map'
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs, output_degree=2)
+
     def do_render(self, engine, **kwargs):
         engine.render_choice_mapping(self, **kwargs)
 
 
 class Engine:
-    def is_rendered(self, elem: Renderable):
-        raise NotImplementedError
+    def __init__(self):
+        self.rendered = set()  # {variable_id}
+        self.frameset = {}
+
+    def is_rendered(self, elem):
+        return str(elem) in self.rendered
+
+    def mark_rendered(self, elem: Renderable):
+        self.rendered.add(str(elem))
 
     def render_variable(self, variable: Variable, **kwargs):
         if variable.is_free():
@@ -188,7 +198,4 @@ class Engine:
         raise NotImplementedError
 
     def render_choice_mapping(self, choice_map: ChoiceMapping, **kwargs):
-        raise NotImplementedError
-
-    def mark_rendered(self, elem: Renderable):
         raise NotImplementedError

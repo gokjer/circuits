@@ -1,8 +1,8 @@
 from collections import defaultdict
 from itertools import product
 
-from conditions import exactly_one, set_value
-from universal import Engine, Array, Variable, Function, ChoiceMapping, Renderable
+from engines.sat.logical import exactly_one, set_value
+from universal import Engine, Array, Function, ChoiceMapping, Renderable
 from utils import incrementing_dict
 
 
@@ -18,14 +18,7 @@ class SATEngine(Engine):
         self.vars = defaultdict(list)  # variable_id -> [symbol]
         self.functions = defaultdict(lambda: defaultdict(list))  # function_id -> (out_index -> [symbol])
         self.choices = defaultdict(list)  # choice_id -> [symbol]
-        self.rendered = set()  # {variable_id}
         self.frameset = {}
-
-    def is_rendered(self, elem):
-        return str(elem) in self.rendered
-
-    def mark_rendered(self, elem: Renderable):
-        self.rendered.add(str(elem))
 
     def render_free_variable(self, variable, **kwargs):
         var_id = str(variable)
@@ -41,7 +34,8 @@ class SATEngine(Engine):
         pass
 
     def render_choice_output(self, array: Array, **kwargs):
-        pass
+        variable1, variable2 = array.variables
+
 
     def render_function(self, function: Function, **kwargs):
         fun_id = str(function)
