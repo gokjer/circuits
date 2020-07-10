@@ -2,7 +2,7 @@ from collections import defaultdict
 from itertools import product
 
 from engines.sat.logical import exactly_one, set_value
-from universal import Engine, Array, Function, ChoiceMapping, Renderable
+from universal import Engine, Array, Function, ChoiceMapping, Variable
 from utils import incrementing_dict
 
 
@@ -57,3 +57,6 @@ class SATEngine(Engine):
             exactly_one([self.symbols[symbol] for symbol in self.choices[choice_id]])
         )
         self.mark_rendered(choice)
+
+    def set_equal(self, variable1: Variable, variable2: Variable, **kwargs):
+        pass

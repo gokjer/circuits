@@ -33,7 +33,18 @@ class RenderableObject(Renderable):
     def __init__(self, dependencies=None, name=None):
         super().__init__()
         self.dependencies = dependencies or []
+        self.base_dependencies = None
         self.name = name or self.name
+
+    def get_base_deps(self):
+        if self.base_dependencies is None:
+            result = set()
+            for dep in self.dependencies:
+                result.update(dep.get_base_deps())
+            if not result:
+                result = {self}
+            self.base_dependencies = tuple(sorted(result))
+        return self.base_dependencies
 
     def pre_render(self, engine, ignore_dependencies=False, **kwargs):
         super().pre_render(engine, **kwargs)
@@ -49,17 +60,8 @@ class Variable(RenderableObject):
     def __init__(self, array=None, **kwargs):
         super().__init__(**kwargs)
         self.array = array
-    #     self.base_dependencies = None
-    #
-    # def get_base_deps(self):
-    #     if self.base_dependencies is None:
-    #         result = {}
-    #         for dep in self.dependencies:
-    #             result.update(dep.get_base_deps())
-    #         if not result:
-    #             result = {self}
-    #         self.base_dependencies = frozenset(result)
-    #     return self.base_dependencies
+        if self.array not in self.dependencies:
+            self.dependencies.append(self.array)
 
     def do_render(self, engine, **kwargs):
         engine.render_variable(self, **kwargs)
@@ -80,6 +82,8 @@ class Array(RenderableObject):
         self.size = size
         if origin is not None:
             assert isinstance(origin, RenderableMapping), 'Origin must be either a mapping or None'
+        else:
+            assert not self.dependencies, 'Cannot have dependencies without an origin'
         self.origin = origin
         self.variables = [self.variable_cls(array=self, dependencies=[self]) for _ in range(self.size)]
 
@@ -98,7 +102,14 @@ class Array(RenderableObject):
         return f'[{self.origin and str(self.origin) or ""}]_{super().__str__()}'
 
     def is_free(self):
-        return self.origin is None and not self.dependencies
+        assert self.origin is not None or not self.dependencies, 'Cannot have dependencies without an origin'
+        return self.origin is None
+
+    def get_base_deps(self):
+        if self.origin is None:
+            assert not self.dependencies, 'Cannot have dependencies without an origin'
+            return tuple(sorted(self.variables))
+        return super().get_base_deps()
 
 
 class RenderableMapping(Renderable):
@@ -146,10 +157,21 @@ class ChoiceMapping(RenderableMapping):
         engine.render_choice_mapping(self, **kwargs)
 
 
+class Condition(Renderable):
+    def __init__(self, variables):
+        super().__init__()
+        self.variables = variables
+
+
+class Equality(Condition):
+    # TODO check if variables are comparable, i.e. they have the same frameset (basic dependencies)
+    def do_render(self, engine, **kwargs):
+        engine.render_equality(self, **kwargs)
+
+
 class Engine:
     def __init__(self):
         self.rendered = set()  # {variable_id}
-        self.frameset = {}
 
     def is_rendered(self, elem):
         return str(elem) in self.rendered
@@ -198,4 +220,11 @@ class Engine:
         raise NotImplementedError
 
     def render_choice_mapping(self, choice_map: ChoiceMapping, **kwargs):
+        raise NotImplementedError
+
+    def render_equality(self, equality: Equality, **kwargs):
+        for var1, var2 in zip(equality.variables, equality.variables[1:]):
+            self.set_equal(var1, var2, **kwargs)
+
+    def set_equal(self, variable1: Variable, variable2: Variable, **kwargs):
         raise NotImplementedError
