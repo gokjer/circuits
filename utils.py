@@ -2,6 +2,7 @@ from collections import defaultdict
 from itertools import count
 
 
+# noinspection PyPep8Naming
 class incrementing_dict(defaultdict):
     def __init__(self, start_count=1, **kwargs):
         assert 'default_factory' not in kwargs, 'Cannot use default_factory'
@@ -14,6 +15,7 @@ class incrementing_dict(defaultdict):
         return self[key]
 
     def __setitem__(self, key, value):
+        # TODO add more suitable error here
         raise RuntimeError('Direct insertion is forbidden for incrementing dict')
 
 

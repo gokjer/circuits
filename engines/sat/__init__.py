@@ -1,5 +1,5 @@
 from collections import defaultdict
-from itertools import product
+from itertools import product, combinations
 
 from engines.sat.logical import exactly_one, set_value
 from universal import Engine, Array, Function, ChoiceMapping, Variable
@@ -34,8 +34,17 @@ class SATEngine(Engine):
         pass
 
     def render_choice_output(self, array: Array, **kwargs):
+        assert isinstance(array.origin, ChoiceMapping), \
+            f'Trying to render choice output while origin is not a ChoiceMapping, but a {type(array.origin)}'
         variable1, variable2 = array.variables
+        deps, other_deps = map(lambda var: var.get_base_deps(), array.variables)
+        assert deps == other_deps, 'Choice output variables must have the same dependencies'
+        choice_id = str(array.origin)
+        for comb, var in zip(combinations(array.origin_inputs, 2), self.choices[choice_id]):
+            input1, input2 = comb
 
+        self.mark_rendered(variable1)
+        self.mark_rendered(variable2)
 
     def render_function(self, function: Function, **kwargs):
         fun_id = str(function)

@@ -77,7 +77,7 @@ class Array(RenderableObject):
     name = 'array'
     variable_cls = Variable
 
-    def __init__(self, size, origin=None, **kwargs):
+    def __init__(self, size, origin=None, origin_inputs=None, **kwargs):
         super().__init__(**kwargs)
         self.size = size
         if origin is not None:
@@ -85,6 +85,7 @@ class Array(RenderableObject):
         else:
             assert not self.dependencies, 'Cannot have dependencies without an origin'
         self.origin = origin
+        self.origin_inputs = origin_inputs
         self.variables = [self.variable_cls(array=self, dependencies=[self]) for _ in range(self.size)]
 
     def __getitem__(self, item):
@@ -123,7 +124,7 @@ class RenderableMapping(Renderable):
 
     def __call__(self, input_vars, **kwargs):
         assert len(input_vars) == self.input_degree, f'Wrong input size: {len(input_vars)} instead of {self.input_degree}'
-        outputs = self.array_cls(size=self.output_degree, dependencies=input_vars, origin=self)
+        outputs = self.array_cls(size=self.output_degree, dependencies=input_vars, origin=self, origin_inputs=input_vars)
         return outputs
 
 
@@ -164,7 +165,11 @@ class Condition(Renderable):
 
 
 class Equality(Condition):
-    # TODO check if variables are comparable, i.e. they have the same frameset (basic dependencies)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for var1, var2 in zip(self.variables, self.variables[1:]):
+            assert var1.get_base_deps() == var2.get_base_deps(), 'Variables {var1} and {var2} are not comparable'
+
     def do_render(self, engine, **kwargs):
         engine.render_equality(self, **kwargs)
 
