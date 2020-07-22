@@ -1,8 +1,8 @@
 from collections import defaultdict
 from itertools import product, combinations
 
-from engines.sat.logical import exactly_one, set_value
-from universal import Engine, Array, Function, ChoiceMapping, Variable
+from engines.sat.logical import exactly_one, set_value, equals
+from universal import Engine, Array, Function, ChoiceMapping, Variable, closure
 from utils import incrementing_dict
 
 
@@ -31,6 +31,7 @@ class SATEngine(Engine):
         self.mark_rendered(variable)
 
     def render_function_output(self, array: Array, **kwargs):
+        # TODO
         pass
 
     def render_choice_output(self, array: Array, **kwargs):
@@ -40,9 +41,9 @@ class SATEngine(Engine):
         deps, other_deps = map(lambda var: var.get_base_deps(), array.variables)
         assert deps == other_deps, 'Choice output variables must have the same dependencies'
         choice_id = str(array.origin)
-        for comb, var in zip(combinations(array.origin_inputs, 2), self.choices[choice_id]):
+        for comb, symb in zip(combinations(array.origin_inputs, 2), self.choices[choice_id]):
             input1, input2 = comb
-
+        # TODO
         self.mark_rendered(variable1)
         self.mark_rendered(variable2)
 
@@ -69,3 +70,9 @@ class SATEngine(Engine):
 
     def set_equal(self, variable1: Variable, variable2: Variable, **kwargs):
         pass
+
+    def equal_vars(self, variable1: Variable, variable2: Variable):
+        axes = closure(variable1.axes, variable2.axes)
+        for coord in axes:
+            pass
+        # TODO

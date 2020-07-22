@@ -17,3 +17,7 @@ def set_value(symb, val: bool):
 def if_then(all_true, then):
     negated = [-symbol for symbol in all_true]
     return [negated + clause for clause in then]
+
+
+def equals(symb1, symb2):
+    return [[symb1, symb2], [-symb1, -symb2]]

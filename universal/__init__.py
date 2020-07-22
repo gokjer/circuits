@@ -1,76 +1,8 @@
 from collections import defaultdict
 
-from utils import InstanceCounterMeta
-
-
-class Renderable(metaclass=InstanceCounterMeta):
-    name = 'base'
-
-    def __init__(self):
-        self.count = next(self.__class__.counter)
-
-    def pre_render(self, engine, **kwargs):
-        assert not engine.is_rendered(self), f'{self} is already rendered'
-
-    def do_render(self, engine, **kwargs):
-        raise NotImplementedError
-
-    def post_render(self, engine, **kwargs):
-        pass
-
-    def render(self, engine, **kwargs):
-        self.pre_render(engine, **kwargs)
-        self.do_render(engine, **kwargs)
-        self.post_render(engine, **kwargs)
-
-    def __str__(self):
-        return f'{self.name}_{self.count}'
-
-
-class RenderableObject(Renderable):
-    name = 'object'
-
-    def __init__(self, dependencies=None, name=None):
-        super().__init__()
-        self.dependencies = dependencies or []
-        self.base_dependencies = None
-        self.name = name or self.name
-
-    def get_base_deps(self):
-        if self.base_dependencies is None:
-            result = set()
-            for dep in self.dependencies:
-                result.update(dep.get_base_deps())
-            if not result:
-                result = {self}
-            self.base_dependencies = tuple(sorted(result))
-        return self.base_dependencies
-
-    def pre_render(self, engine, ignore_dependencies=False, **kwargs):
-        super().pre_render(engine, **kwargs)
-        if not ignore_dependencies:
-            for dep in self.dependencies:
-                if not engine.is_rendered(dep):
-                    dep.render(engine, **kwargs)
-
-
-class Variable(RenderableObject):
-    name = 'variable'
-
-    def __init__(self, array=None, **kwargs):
-        super().__init__(**kwargs)
-        self.array = array
-        if self.array not in self.dependencies:
-            self.dependencies.append(self.array)
-
-    def do_render(self, engine, **kwargs):
-        engine.render_variable(self, **kwargs)
-
-    def __str__(self):
-        return f'{self.array and str(self.array) or ""}_{super().__str__()}'
-
-    def is_free(self):
-        return self.array is None or self.array.is_free()
+from universal.axes import closure
+from universal.renderable import Renderable, RenderableObject
+from universal.variables import Variable
 
 
 class Array(RenderableObject):
@@ -105,12 +37,6 @@ class Array(RenderableObject):
     def is_free(self):
         assert self.origin is not None or not self.dependencies, 'Cannot have dependencies without an origin'
         return self.origin is None
-
-    def get_base_deps(self):
-        if self.origin is None:
-            assert not self.dependencies, 'Cannot have dependencies without an origin'
-            return tuple(sorted(self.variables))
-        return super().get_base_deps()
 
 
 class RenderableMapping(Renderable):
@@ -168,7 +94,7 @@ class Equality(Condition):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for var1, var2 in zip(self.variables, self.variables[1:]):
-            assert var1.get_base_deps() == var2.get_base_deps(), 'Variables {var1} and {var2} are not comparable'
+            assert var1.axes == var2.axes, 'Variables {var1} and {var2} are not comparable'
 
     def do_render(self, engine, **kwargs):
         engine.render_equality(self, **kwargs)

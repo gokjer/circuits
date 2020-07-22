@@ -1,4 +1,5 @@
 from collections import UserDict
+from itertools import product
 
 from utils import InstanceCounterMeta
 
@@ -17,6 +18,11 @@ class Axis(metaclass=InstanceCounterMeta):
 class Axes:
     def __init__(self, axes=None):
         self.axes = set(axes or ())
+
+    def __iter__(self):
+        for values in product([False, True], repeat=len(self.axes)):
+            coords = dict(zip(self.axes, values))
+            yield Coordinates(**coords)
 
 
 def closure(*axes_instances):
