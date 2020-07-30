@@ -17,7 +17,7 @@ class Axis(metaclass=InstanceCounterMeta):
 
 class Axes:
     def __init__(self, axes=None):
-        self.axes = set(axes or ())
+        self.axes = tuple(sorted(axes or ()))
 
     def __iter__(self):
         for values in product([False, True], repeat=len(self.axes)):
@@ -28,7 +28,7 @@ class Axes:
 def closure(*axes_instances):
     axes = set()
     for instance in axes_instances:
-        axes |= instance.axes
+        axes.update(instance.axes)
     return Axes(axes=axes)
 
 

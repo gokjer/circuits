@@ -1,8 +1,9 @@
 from collections import defaultdict
 from itertools import product, combinations
 
-from engines.sat.logical import exactly_one, set_value, equals
-from universal import Engine, Array, Function, ChoiceMapping, Variable, closure
+from engines.sat.logical import exactly_one, set_value, equal_symbols
+from universal import Array, Function, ChoiceMapping, Variable, closure
+from universal.engine import Engine
 from utils import incrementing_dict
 
 
@@ -38,8 +39,7 @@ class SATEngine(Engine):
         assert isinstance(array.origin, ChoiceMapping), \
             f'Trying to render choice output while origin is not a ChoiceMapping, but a {type(array.origin)}'
         variable1, variable2 = array.variables
-        deps, other_deps = map(lambda var: var.get_base_deps(), array.variables)
-        assert deps == other_deps, 'Choice output variables must have the same dependencies'
+        assert variable1.axes == variable2.axes, 'Choice output variables must have the same axes'
         choice_id = str(array.origin)
         for comb, symb in zip(combinations(array.origin_inputs, 2), self.choices[choice_id]):
             input1, input2 = comb

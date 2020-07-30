@@ -23,4 +23,4 @@ class Variable(RenderableObject):
         return f'{self.array and str(self.array) or ""}_{super().__str__()}'
 
     def is_free(self):
-        return self.array is None or self.array.is_free()
+        return self.array is None

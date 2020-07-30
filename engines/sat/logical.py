@@ -19,5 +19,5 @@ def if_then(all_true, then):
     return [negated + clause for clause in then]
 
 
-def equals(symb1, symb2):
-    return [[symb1, symb2], [-symb1, -symb2]]
+def equal_symbols(symb1, symb2):
+    return [[symb1, -symb2], [-symb1, symb2]]
