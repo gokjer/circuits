@@ -14,9 +14,9 @@ class Axis(metaclass=InstanceCounterMeta):
     def __str__(self):
         return f'axis_{self.count}'
 
-    def __le__(self, other):
+    def __lt__(self, other):
         assert isinstance(other, Axis), 'can only compare an axis to an axis'
-        return self.count <= other.count
+        return self.count < other.count
 
 
 class Axes:
@@ -25,8 +25,9 @@ class Axes:
 
     def __iter__(self):
         for values in product([False, True], repeat=len(self.axes)):
-            coords = dict(zip(self.axes, values))
-            yield Coordinates(**coords)
+            elem = Coordinates()
+            elem.update(zip(self.axes, values))
+            yield elem
 
     def __eq__(self, other):
         return self.axes == other.axes
@@ -44,7 +45,9 @@ class Coordinates(UserDict):
         assert all(axis in self.data for axis in axes.axes), \
             f'Cannot project coordinates on {self.data.keys()} on {axes.axes}'
         new_data = {axis: self.data[axis] for axis in axes.axes}
-        return Coordinates(**new_data)
+        result = Coordinates()
+        result.update(((axis, self.data[axis]) for axis in axes.axes))
+        return result
 
     def int_value(self):
         result = 0

@@ -2,7 +2,7 @@ from collections import defaultdict
 
 from universal.axes import closure
 from universal.renderable import Renderable, RenderableObject
-from universal.variables import Variable
+from universal.variable import Variable
 
 
 class Array(RenderableObject):
@@ -92,5 +92,3 @@ class Equality(Condition):
 
     def do_render(self, engine, **kwargs):
         engine.render_equality(self, **kwargs)
-
-

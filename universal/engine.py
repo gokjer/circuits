@@ -3,7 +3,7 @@ from utils import encouple
 
 
 class Engine:
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.rendered = set()  # {variable_id}
 
     def is_rendered(self, elem):

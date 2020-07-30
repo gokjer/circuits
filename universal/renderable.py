@@ -39,7 +39,7 @@ class RenderableObject(Renderable):
     def axes(self) -> Axes:
         if self._axes is None:
             if self.dependencies:
-                self._axes = closure(dep.axes for dep in self.dependencies)
+                self._axes = closure(*[dep.axes for dep in self.dependencies])
             else:
                 self._axes = self.new_axes()
         return self._axes

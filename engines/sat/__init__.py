@@ -12,17 +12,16 @@ def all_inputs(dim: int):
 
 
 class SATEngine(Engine):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.clauses = []  # [[+-symbol_id]]
         self.symbols = incrementing_dict()  # symbol -> symbol_id
         self.vars = defaultdict(list)  # variable_id -> [symbol]
         self.functions = defaultdict(lambda: defaultdict(list))  # function_id -> (out_index -> [symbol])
         self.choices = defaultdict(list)  # choice_id -> [symbol]
-        self.frameset = {}
 
     def init_variable(self, variable):
-        size = 2 ** len(variable.axes)
+        size = 2 ** len(variable.axes.axes)
         variable_id = str(variable)
         symbols = [f'{variable_id}_{i}' for i in range(size)]
         self.vars[variable_id] = symbols
@@ -36,6 +35,7 @@ class SATEngine(Engine):
 
     def render_bound_variable(self, variable, **kwargs):
         # TODO something?
+        assert False
         self.init_variable(variable)
         self.mark_rendered(variable)
 
@@ -49,6 +49,7 @@ class SATEngine(Engine):
         the rest is the precondition
         """
         self._check_output_correctness(array, FunctionMapping, 'function output')
+        self._init_array(array)
         fun_id = str(array.origin)
         for var, ind in zip(array.variables, range(array.origin.output_degree)):
             fun_symbs = self.functions[fun_id][ind]
@@ -66,6 +67,7 @@ class SATEngine(Engine):
 
     def render_choice_output(self, array: Array, **kwargs):
         self._check_output_correctness(array, ChoiceMapping, 'choice output')
+        self._init_array(array)
         choice_id = str(array.origin)
         for inputs, choice_symb in zip(combinations(array.origin_inputs, len(array.variables)), self.choices[choice_id]):
             for inp, var in zip(inputs, array.variables):
@@ -91,12 +93,9 @@ class SATEngine(Engine):
         self.mark_rendered(function)
 
     def render_choice_mapping(self, choice: ChoiceMapping, **kwargs):
-        # TODO allow more than 2 out of n choices here
-        assert choice.output_degree == 2, 'Only degree 2 is allowed in ChoiceMappings (others tbd)'
         choice_id = str(choice)
-        for i in range(choice.input_degree - 1):
-            for j in range(i+1, choice.input_degree):
-                self.choices[choice_id].append(f'{choice_id}_{i}_{j}')
+        for indices in combinations(range(choice.input_degree), choice.output_degree):
+            self.choices[choice_id].append(f'{choice_id}_{"_".join(map(str, indices))}')
         self.clauses.extend(
             exactly_one([self.symbols[symbol] for symbol in self.choices[choice_id]])
         )
@@ -111,7 +110,7 @@ class SATEngine(Engine):
             assert str(var) in self.vars, f'Variable {var} is not initialized'
         axes = closure(*[var.axes for var in variables])
         for coord in axes:
-            symbs = [self.vars[str(var)][coord.project(var).int_value()] for var in variables]
+            symbs = [self.vars[str(var)][coord.project(var.axes).int_value()] for var in variables]
             for symb1, symb2 in encouple(symbs):
                 result.extend(equal_symbols(self.symbols[symb1], self.symbols[symb2]))
         return result
@@ -121,3 +120,8 @@ class SATEngine(Engine):
             f'Trying to render {output_name} while origin is not a {correct_mapping_cls.__name__}, but a {type(array.origin)}'
         for var1, var2 in encouple(array.variables):
             assert var1.axes == var2.axes, 'Output variables must have the same axes'
+
+    def _init_array(self, array):
+        for var in array.variables:
+            if str(var) not in self.vars:
+                self.init_variable(var)
