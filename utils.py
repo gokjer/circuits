@@ -27,3 +27,11 @@ class InstanceCounterMeta(type):
     def __init__(cls, name, bases, attrs):
         super().__init__(name, bases, attrs)
         cls.counter = count(0)
+
+
+def encouple(iterable):
+    """
+    [1, 2, 3, 4] -> (1, 2), (2, 3), (3, 4)
+    """
+    memory = list(iterable)
+    return zip(memory, memory[1:])

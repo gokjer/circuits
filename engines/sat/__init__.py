@@ -1,10 +1,10 @@
 from collections import defaultdict
 from itertools import product, combinations
 
-from engines.sat.logical import exactly_one, set_value, equal_symbols
-from universal import Array, Function, ChoiceMapping, Variable, closure
+from engines.sat.logical import exactly_one, equals_value, equal_symbols, if_then
+from universal import Array, FunctionMapping, ChoiceMapping, Variable, closure
 from universal.engine import Engine
-from utils import incrementing_dict
+from utils import incrementing_dict, encouple
 
 
 def all_inputs(dim: int):
@@ -21,33 +21,65 @@ class SATEngine(Engine):
         self.choices = defaultdict(list)  # choice_id -> [symbol]
         self.frameset = {}
 
+    def init_variable(self, variable):
+        size = 2 ** len(variable.axes)
+        variable_id = str(variable)
+        symbols = [f'{variable_id}_{i}' for i in range(size)]
+        self.vars[variable_id] = symbols
+
     def render_free_variable(self, variable, **kwargs):
+        self.init_variable(variable)
         var_id = str(variable)
-        self.vars[var_id] = [f'{var_id}_{i}' for i in range(2)]
         for symbol, val in zip(self.vars[var_id], [False, True]):
-            self.clauses.append(set_value(symbol, val))
+            self.clauses.append(equals_value(self.symbols[symbol], val))
         self.mark_rendered(variable)
 
     def render_bound_variable(self, variable, **kwargs):
+        # TODO something?
+        self.init_variable(variable)
         self.mark_rendered(variable)
 
     def render_function_output(self, array: Array, **kwargs):
-        # TODO
-        pass
+        """
+        For each output index, the following happens:
+
+        for each coord of output variable `var` and for each s1..sn from {True, False} (n == input_degree) we have
+        (i1 == s1) & (i2 == s2) & .. & (in == sn)  =>  (var == f(s1..sn)), which we rewrite as
+        (i1 != s1) | (i2 != s2) | .. | (in != sn) | (var == f(s1..sn)), where (var == f(s1..sn)) is the `statement` and
+        the rest is the precondition
+        """
+        self._check_output_correctness(array, FunctionMapping, 'function output')
+        fun_id = str(array.origin)
+        for var, ind in zip(array.variables, range(array.origin.output_degree)):
+            fun_symbs = self.functions[fun_id][ind]
+            for coord in var.axes:
+                out_symb = self.vars[str(var)][coord.int_value()]
+                for input_values, fun_symb in zip(all_inputs(dim=array.origin.input_degree), fun_symbs):
+                    statement = equal_symbols(self.symbols[out_symb], self.symbols[fun_symb])
+                    precondition = []
+                    for input_var, input_val in zip(array.origin_inputs, input_values):
+                        input_symb = self.vars[str(input_var)][coord.project(input_var.axes).int_value()]
+                        precondition.extend(equals_value(self.symbols[input_symb], input_val))
+                    self.clauses.extend(if_then(precondition, statement))
+        for var in array.variables:
+            self.mark_rendered(var)
 
     def render_choice_output(self, array: Array, **kwargs):
-        assert isinstance(array.origin, ChoiceMapping), \
-            f'Trying to render choice output while origin is not a ChoiceMapping, but a {type(array.origin)}'
-        variable1, variable2 = array.variables
-        assert variable1.axes == variable2.axes, 'Choice output variables must have the same axes'
+        self._check_output_correctness(array, ChoiceMapping, 'choice output')
         choice_id = str(array.origin)
-        for comb, symb in zip(combinations(array.origin_inputs, 2), self.choices[choice_id]):
-            input1, input2 = comb
-        # TODO
-        self.mark_rendered(variable1)
-        self.mark_rendered(variable2)
+        for inputs, choice_symb in zip(combinations(array.origin_inputs, len(array.variables)), self.choices[choice_id]):
+            for inp, var in zip(inputs, array.variables):
+                equal_cond = self.equal_vars(inp, var)
+                self.clauses.extend(
+                    if_then(
+                        [self.symbols[choice_symb]],
+                        equal_cond,
+                    )
+                )
+        for var in array.variables:
+            self.mark_rendered(var)
 
-    def render_function(self, function: Function, **kwargs):
+    def render_function_mapping(self, function: FunctionMapping, **kwargs):
         fun_id = str(function)
         for out_ind in range(function.output_degree):
             for input_id, input in enumerate(all_inputs(function.input_degree)):
@@ -55,10 +87,12 @@ class SATEngine(Engine):
                 self.functions[fun_id][out_ind].append(symbol)
                 symbol_id = self.symbols[symbol]
                 if input in function.values[out_ind]:
-                    self.clauses.append(set_value(symbol_id, function.values[out_ind][input]))
+                    self.clauses.append(equals_value(symbol_id, function.values[out_ind][input]))
         self.mark_rendered(function)
 
     def render_choice_mapping(self, choice: ChoiceMapping, **kwargs):
+        # TODO allow more than 2 out of n choices here
+        assert choice.output_degree == 2, 'Only degree 2 is allowed in ChoiceMappings (others tbd)'
         choice_id = str(choice)
         for i in range(choice.input_degree - 1):
             for j in range(i+1, choice.input_degree):
@@ -68,11 +102,22 @@ class SATEngine(Engine):
         )
         self.mark_rendered(choice)
 
-    def set_equal(self, variable1: Variable, variable2: Variable, **kwargs):
-        pass
+    def set_equal(self, *variables, **kwargs):
+        self.clauses.extend(self.equal_vars(*variables))
 
-    def equal_vars(self, variable1: Variable, variable2: Variable):
-        axes = closure(variable1.axes, variable2.axes)
+    def equal_vars(self, *variables):
+        result = []
+        for var in variables:
+            assert str(var) in self.vars, f'Variable {var} is not initialized'
+        axes = closure(*[var.axes for var in variables])
         for coord in axes:
-            pass
-        # TODO
+            symbs = [self.vars[str(var)][coord.project(var).int_value()] for var in variables]
+            for symb1, symb2 in encouple(symbs):
+                result.extend(equal_symbols(self.symbols[symb1], self.symbols[symb2]))
+        return result
+
+    def _check_output_correctness(self, array, correct_mapping_cls, output_name='mapping output'):
+        assert isinstance(array.origin, correct_mapping_cls), \
+            f'Trying to render {output_name} while origin is not a {correct_mapping_cls.__name__}, but a {type(array.origin)}'
+        for var1, var2 in encouple(array.variables):
+            assert var1.axes == var2.axes, 'Output variables must have the same axes'

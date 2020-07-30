@@ -8,7 +8,7 @@ class Variable(RenderableObject):
     def __init__(self, array=None, **kwargs):
         super().__init__(**kwargs)
         self.array = array
-        if self.array not in self.dependencies:
+        if self.array and self.array not in self.dependencies:
             self.dependencies.append(self.array)
         self._axes = None
 

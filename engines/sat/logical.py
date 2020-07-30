@@ -8,7 +8,7 @@ def exactly_one(symb_ids):
     return result
 
 
-def set_value(symb, val: bool):
+def equals_value(symb, val: bool):
     if val:
         return [symb]
     return [-symb]

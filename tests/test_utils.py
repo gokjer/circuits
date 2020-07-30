@@ -1,6 +1,6 @@
 import pytest
 
-from utils import incrementing_dict
+from utils import incrementing_dict, encouple
 
 
 def test_incrementing_dict():
@@ -15,3 +15,9 @@ def test_incrementing_dict_setitem():
     d = incrementing_dict()
     with pytest.raises(RuntimeError):
         d[1] = 2
+
+
+def test_encouple():
+    inp = (1, 2, 3, 4)
+    assert list(encouple(inp)) == [(1, 2), (2, 3), (3, 4)]
+    assert list(encouple([])) == []

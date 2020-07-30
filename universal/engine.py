@@ -1,4 +1,5 @@
-from universal import Renderable, Variable, Array, Function, ChoiceMapping, Equality
+from universal import Renderable, Variable, Array, FunctionMapping, ChoiceMapping, Equality
+from utils import encouple
 
 
 class Engine:
@@ -24,7 +25,7 @@ class Engine:
         raise NotImplementedError
 
     def render_array(self, array: Array, **kwargs):
-        if isinstance(array.origin, Function):
+        if isinstance(array.origin, FunctionMapping):
             self.render_function_output(array, **kwargs)
         elif isinstance(array.origin, ChoiceMapping):
             self.render_choice_output(array, **kwargs)
@@ -37,14 +38,14 @@ class Engine:
     def render_choice_output(self, array: Array, **kwargs):
         raise NotImplementedError
 
-    def render_function(self, function: Function, **kwargs):
+    def render_function_mapping(self, function: FunctionMapping, **kwargs):
         raise NotImplementedError
 
     def render_choice_mapping(self, choice_map: ChoiceMapping, **kwargs):
         raise NotImplementedError
 
     def render_equality(self, equality: Equality, **kwargs):
-        for var1, var2 in zip(equality.variables, equality.variables[1:]):
+        for var1, var2 in encouple(equality.variables):
             self.set_equal(var1, var2, **kwargs)
 
     def set_equal(self, variable1: Variable, variable2: Variable, **kwargs):

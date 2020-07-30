@@ -15,7 +15,7 @@ class Array(RenderableObject):
         assert isinstance(origin, RenderableMapping), 'Origin must be a mapping'
         self.origin = origin
         self.origin_inputs = origin_inputs
-        self.variables = [self.variable_cls(array=self, dependencies=[self]) for _ in range(self.size)]
+        self.variables = [self.variable_cls(array=self) for _ in range(self.size)]
 
     def __getitem__(self, item):
         return self.variables[item]
@@ -47,7 +47,7 @@ class RenderableMapping(Renderable):
         return outputs
 
 
-class Function(RenderableMapping):
+class FunctionMapping(RenderableMapping):
     POSSIBLE_VALUES = [False, True]
     name = 'function'
 
@@ -64,14 +64,15 @@ class Function(RenderableMapping):
         self.values[output_index][tuple(input_values)] = output_value
 
     def do_render(self, engine, **kwargs):
-        engine.render_function(self, **kwargs)
+        engine.render_function_mapping(self, **kwargs)
 
 
 class ChoiceMapping(RenderableMapping):
     name = 'choice_map'
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs, output_degree=2)
+        kwargs.setdefault('output_degree', 2)
+        super().__init__(*args, **kwargs)
 
     def do_render(self, engine, **kwargs):
         engine.render_choice_mapping(self, **kwargs)
