@@ -14,8 +14,9 @@ class MappingResult:
 class ChoiceMappingResult(MappingResult):
     def __init__(self, choices, **kwargs):
         super().__init__(**kwargs)
-        assert all([0 <= choice < self.output_degree for choice in choices]), \
-            f'Choice of of bounds [0, {self.output_degree}): {choices}'
+        assert all([0 <= choice < self.input_degree for choice in choices]), \
+            f'Choice of of bounds [0, {self.input_degree}): {choices}'
+        assert len(choices) == self.output_degree, f'Must have {self.output_degree} choices, but have {len(choices)}'
         assert all((left < right for left, right in encouple(choices))), f'Choices are not sorted: {choices}'
         self.choices = choices
 

@@ -16,8 +16,8 @@ class Variable(RenderableObject):
     def new_axes():
         return Axes(axes=[Axis()])
 
-    def do_render(self, engine, **kwargs):
-        engine.render_variable(self, **kwargs)
+    def do_render(self, renderer, **kwargs):
+        renderer.render_variable(self, **kwargs)
 
     def __str__(self):
         return f'{self.array and str(self.array) or ""}_{super().__str__()}'

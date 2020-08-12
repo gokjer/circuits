@@ -2,7 +2,7 @@ from universal import Renderable, Variable, Array, FunctionMapping, ChoiceMappin
 from utils import encouple
 
 
-class Engine:
+class Renderer:
     def __init__(self, **kwargs):
         self.rendered = set()  # {variable_id}
 

@@ -20,13 +20,13 @@ class Array(RenderableObject):
     def __getitem__(self, item):
         return self.variables[item]
 
-    def pre_render(self, engine, **kwargs):
-        super().pre_render(engine, **kwargs)
-        if self.origin and not engine.is_rendered(self.origin):
-            self.origin.render(engine, **kwargs)
+    def pre_render(self, renderer, **kwargs):
+        super().pre_render(renderer, **kwargs)
+        if self.origin and not renderer.is_rendered(self.origin):
+            self.origin.render(renderer, **kwargs)
 
-    def do_render(self, engine, **kwargs):
-        engine.render_array(self, **kwargs)
+    def do_render(self, renderer, **kwargs):
+        renderer.render_array(self, **kwargs)
 
     def __str__(self):
         return f'[{self.origin and str(self.origin) or ""}]_{super().__str__()}'
@@ -63,8 +63,8 @@ class FunctionMapping(RenderableMapping):
         assert output_index not in self.values[input_values], f'Output index {output_index} is already set for values {input_values}'
         self.values[output_index][tuple(input_values)] = output_value
 
-    def do_render(self, engine, **kwargs):
-        engine.render_function_mapping(self, **kwargs)
+    def do_render(self, renderer, **kwargs):
+        renderer.render_function_mapping(self, **kwargs)
 
 
 class ChoiceMapping(RenderableMapping):
@@ -74,8 +74,8 @@ class ChoiceMapping(RenderableMapping):
         kwargs.setdefault('output_degree', 2)
         super().__init__(*args, **kwargs)
 
-    def do_render(self, engine, **kwargs):
-        engine.render_choice_mapping(self, **kwargs)
+    def do_render(self, renderer, **kwargs):
+        renderer.render_choice_mapping(self, **kwargs)
 
 
 class Condition(Renderable):
@@ -90,5 +90,5 @@ class Equality(Condition):
         for var1, var2 in zip(self.variables, self.variables[1:]):
             assert var1.axes == var2.axes, 'Variables {var1} and {var2} are not comparable'
 
-    def do_render(self, engine, **kwargs):
-        engine.render_equality(self, **kwargs)
+    def do_render(self, renderer, **kwargs):
+        renderer.render_equality(self, **kwargs)

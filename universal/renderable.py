@@ -8,19 +8,19 @@ class Renderable(metaclass=InstanceCounterMeta):
     def __init__(self):
         self.count = next(self.__class__.counter)
 
-    def pre_render(self, engine, **kwargs):
-        assert not engine.is_rendered(self), f'{self} is already rendered'
+    def pre_render(self, renderer, **kwargs):
+        assert not renderer.is_rendered(self), f'{self} is already rendered'
 
-    def do_render(self, engine, **kwargs):
+    def do_render(self, renderer, **kwargs):
         raise NotImplementedError
 
-    def post_render(self, engine, **kwargs):
+    def post_render(self, renderer, **kwargs):
         pass
 
-    def render(self, engine, **kwargs):
-        self.pre_render(engine, **kwargs)
-        self.do_render(engine, **kwargs)
-        self.post_render(engine, **kwargs)
+    def render(self, renderer, **kwargs):
+        self.pre_render(renderer, **kwargs)
+        self.do_render(renderer, **kwargs)
+        self.post_render(renderer, **kwargs)
 
     def __str__(self):
         return f'{self.name}_{self.count}'
@@ -48,9 +48,9 @@ class RenderableObject(Renderable):
     def new_axes():
         raise NotImplementedError
 
-    def pre_render(self, engine, ignore_dependencies=False, **kwargs):
-        super().pre_render(engine, **kwargs)
+    def pre_render(self, renderer, ignore_dependencies=False, **kwargs):
+        super().pre_render(renderer, **kwargs)
         if not ignore_dependencies:
             for dep in self.dependencies:
-                if not engine.is_rendered(dep):
-                    dep.render(engine, **kwargs)
+                if not renderer.is_rendered(dep):
+                    dep.render(renderer, **kwargs)
