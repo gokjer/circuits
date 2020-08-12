@@ -1,4 +1,4 @@
-from universal import Renderable, Variable, Array, FunctionMapping, ChoiceMapping, Equality
+from universal.basic import Renderable, Variable, Array, FunctionMapping, ChoiceMapping, Equality
 from utils import encouple
 
 

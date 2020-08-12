@@ -2,8 +2,7 @@ from collections import defaultdict
 from itertools import product, combinations
 
 from engines.sat.logical import exactly_one, equals_value, equal_symbols, if_then
-from universal import Array, FunctionMapping, ChoiceMapping, Variable, closure
-from universal.renderer import Renderer
+from universal import Array, FunctionMapping, ChoiceMapping, closure, Renderer
 from utils import incrementing_dict, encouple
 
 
@@ -35,7 +34,6 @@ class SATRenderer(Renderer):
 
     def render_bound_variable(self, variable, **kwargs):
         # TODO something?
-        assert False
         self.init_variable(variable)
         self.mark_rendered(variable)
 

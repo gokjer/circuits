@@ -1,6 +1,6 @@
 from itertools import combinations
 
-from universal.result import Decoder, FunctionMappingResult, ChoiceMappingResult
+from universal import Decoder, FunctionMappingResult, ChoiceMappingResult
 
 
 class SATDecoder(Decoder):

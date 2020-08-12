@@ -44,7 +44,6 @@ class Coordinates(UserDict):
     def project(self, axes: Axes):
         assert all(axis in self.data for axis in axes.axes), \
             f'Cannot project coordinates on {self.data.keys()} on {axes.axes}'
-        new_data = {axis: self.data[axis] for axis in axes.axes}
         result = Coordinates()
         result.update(((axis, self.data[axis]) for axis in axes.axes))
         return result
@@ -52,7 +51,7 @@ class Coordinates(UserDict):
     def int_value(self):
         result = 0
         base = 1
-        # dict is supposed to be sorted, so this is just a precaution here
+        # dict is supposed to be sorted, so the `sorted` is just a precaution here
         for _, val in sorted(self.items()):
             result += int(val) * base
             base *= 2

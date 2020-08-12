@@ -1,4 +1,4 @@
-from universal.renderable import RenderableObject
+from universal.basic.renderable import RenderableObject
 from universal.axes import Axes, Axis
 
 

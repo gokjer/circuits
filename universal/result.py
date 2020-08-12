@@ -1,5 +1,6 @@
-from universal import ChoiceMapping, FunctionMapping
 from utils import encouple
+from universal.basic import ChoiceMapping, FunctionMapping
+from universal.extended import Gate
 
 
 class MappingResult:
@@ -39,6 +40,17 @@ class FunctionMappingResult(MappingResult):
         return all((len(out) == self.input_space_size for out in self.values))
 
 
+class GateResult(MappingResult):
+    def __init__(self, choice_result: ChoiceMappingResult, function_result: FunctionMappingResult):
+        super().__init__(input_degree=choice_result.input_degree, output_degree=1)
+        assert function_result.output_degree == 1, 'Gate output must be of degree 1'
+        self.choice_result = choice_result
+        self.function_result = function_result
+
+    def is_valid(self) -> bool:
+        return self.choice_result.is_valid() and self.function_result.is_valid()
+
+
 class Decoder:
     def consume_model(self, model):
         raise NotImplementedError
@@ -48,3 +60,8 @@ class Decoder:
 
     def get_function_result(self, func: FunctionMapping) -> FunctionMappingResult:
         raise NotImplementedError
+
+    def get_gate_result(self, gate: Gate) -> GateResult:
+        choice_result = self.get_choice_result(gate.choice)
+        function_result = self.get_function_result(gate.function)
+        return GateResult(choice_result=choice_result, function_result=function_result)
