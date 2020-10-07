@@ -1,13 +1,9 @@
 from collections import defaultdict
-from itertools import product, combinations
+from itertools import combinations
 
 from engines.sat.logical import exactly_one, equals_value, equal_symbols, if_then
 from universal import Array, FunctionMapping, ChoiceMapping, closure, Renderer
-from utils import incrementing_dict, encouple
-
-
-def all_inputs(dim: int):
-    yield from product([False, True], repeat=dim)
+from utils import incrementing_dict, encouple, all_inputs
 
 
 class SATRenderer(Renderer):
