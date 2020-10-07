@@ -57,3 +57,15 @@ def mod_n_k_computer(n, k):
         return number_to_list(result_value)
 
     return computer
+
+
+def mod_n_comb_computer(n, dim=None):
+    dim = dim or minimal_dim(n-1)
+
+    def computer(inputs):
+        buffer = inputs[-dim:]
+        inputs = inputs[:-dim]
+        result = (list_to_number(buffer) + sum(inputs)) % n
+        return number_to_list(result, pad=dim)
+
+    return computer
