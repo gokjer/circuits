@@ -25,6 +25,9 @@ class Renderable(metaclass=InstanceCounterMeta):
     def __str__(self):
         return f'{self.name}_{self.count}'
 
+    def __repr__(self):
+        return str(self)
+
 
 class RenderableObject(Renderable):
     name = 'object'

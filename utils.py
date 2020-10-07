@@ -1,5 +1,7 @@
 from collections import defaultdict
-from itertools import count
+from contextlib import contextmanager
+from itertools import count, product
+from time import perf_counter
 
 
 # noinspection PyPep8Naming
@@ -35,3 +37,22 @@ def encouple(iterable):
     """
     memory = list(iterable)
     return zip(memory, memory[1:])
+
+
+def all_inputs(dim: int):
+    yield from product([False, True], repeat=dim)
+
+
+def print_dependency_tree(var, offset=0, step=2):
+    print(' ' * offset, var)
+    for dep in var.dependencies or []:
+        print_dependency_tree(dep, offset=offset+step, step=step)
+
+
+@contextmanager
+def time_and_log(process_name):
+    start_time = perf_counter()
+    try:
+        yield
+    finally:
+        print(f'{process_name} finished in {perf_counter() - start_time} seconds')

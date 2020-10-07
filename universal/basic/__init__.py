@@ -19,6 +19,9 @@ class Array(RenderableObject):
     def __getitem__(self, item):
         return self.variables[item]
 
+    def __iter__(self):
+        yield from self.variables
+
     def pre_render(self, renderer, **kwargs):
         super().pre_render(renderer, **kwargs)
         if self.origin and not renderer.is_rendered(self.origin):
@@ -42,7 +45,7 @@ class RenderableMapping(Renderable):
 
     def __call__(self, input_vars, **kwargs):
         assert len(input_vars) == self.input_degree, f'Wrong input size: {len(input_vars)} instead of {self.input_degree}'
-        outputs = self.array_cls(size=self.output_degree, dependencies=input_vars, origin=self, origin_inputs=input_vars)
+        outputs = self.array_cls(size=self.output_degree, dependencies=input_vars.copy(), origin=self, origin_inputs=input_vars.copy())
         return outputs
 
 
@@ -81,6 +84,12 @@ class Condition(Renderable):
     def __init__(self, variables):
         super().__init__()
         self.variables = variables
+
+    def pre_render(self, renderer, **kwargs):
+        super().pre_render(renderer, **kwargs)
+        for var in self.variables:
+            if not renderer.is_rendered(var):
+                var.render(renderer=renderer, **kwargs)
 
 
 class Equality(Condition):

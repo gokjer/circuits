@@ -1,6 +1,6 @@
 from utils import encouple
 from universal.basic import ChoiceMapping, FunctionMapping
-from universal.extended import Gate
+from universal.extended import Gate, Circuit
 
 
 class MappingResult:
@@ -51,6 +51,16 @@ class GateResult(MappingResult):
         return self.choice_result.is_valid() and self.function_result.is_valid()
 
 
+class CircuitResult(MappingResult):
+    def __init__(self, gate_results: list, choice_result: ChoiceMappingResult):
+        super().__init__(input_degree=choice_result.input_degree - len(gate_results), output_degree=choice_result.output_degree)
+        self.gate_results = gate_results
+        self.choice_result = choice_result
+
+    def is_valid(self) -> bool:
+        return all([gate_result.is_valid() for gate_result in self.gate_results]) and self.choice_result.is_valid()
+
+
 class Decoder:
     def consume_model(self, model):
         raise NotImplementedError
@@ -65,3 +75,8 @@ class Decoder:
         choice_result = self.get_choice_result(gate.choice)
         function_result = self.get_function_result(gate.function)
         return GateResult(choice_result=choice_result, function_result=function_result)
+
+    def get_circuit_result(self, circuit: Circuit) -> CircuitResult:
+        gate_results = [self.get_gate_result(gate) for gate in circuit.gates]
+        choice_result = self.get_choice_result(circuit.choice)
+        return CircuitResult(gate_results=gate_results, choice_result=choice_result)

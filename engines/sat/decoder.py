@@ -31,9 +31,10 @@ class SATDecoder(Decoder):
         return result
 
     def consume_model(self, model):
-        self.symbol_values = []
+        # TODO remove this hack, it's here because symbols start with 1
+        self.symbol_values = [None]
         for val in model:
-            assert abs(val) == len(self.symbol_values) + 1
+            assert abs(val) == len(self.symbol_values)
             self.symbol_values.append(val > 0)
 
     def _check_model_consumed(self):
