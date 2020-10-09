@@ -119,3 +119,10 @@ class SATRenderer(Renderer):
         for var in array.variables:
             if str(var) not in self.vars:
                 self.init_variable(var)
+
+    def init_solver(self, solver):
+        for clause in self.clauses:
+            solver.add_clause(clause)
+
+    def log_stat(self):
+        print(f'variables: {len(self.vars)}, symbols: {len(self.symbols)}, clauses: {len(self.clauses)}')

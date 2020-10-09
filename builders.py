@@ -21,8 +21,8 @@ class BaseBuilder:
             eq.render(self.engine, **kwargs)
 
     def solve(self, **kwargs):
-        for clause in self.engine.clauses:
-            self.solver.add_clause(clause)
+        self.engine.init_solver(self.solver)
+        self.engine.log_stat()
         return self.solver.solve()
 
     def decode(self, **kwargs):

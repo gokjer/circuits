@@ -50,3 +50,9 @@ class Renderer:
 
     def set_equal(self, variable1: Variable, variable2: Variable, **kwargs):
         raise NotImplementedError
+
+    def init_solver(self, solver):
+        raise NotImplementedError
+
+    def log_stat(self):
+        raise NotImplementedError
